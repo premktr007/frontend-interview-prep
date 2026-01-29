@@ -1,0 +1,75 @@
+Here are the structured Markdown notes for useCallback(), tailored for a GitHub repository.
+
+🚀 React Hooks: useCallback()
+1. Overview
+useCallback is a React Hook that returns a memoized version of a callback function. It ensures that the function's reference (its memory address) remains the same across re-renders, provided its dependencies haven't changed.
+
+2. When to use useCallback
+As a senior developer, you should resist the urge to wrap every function in useCallback. It is specifically used for:
+
+Referential Stability for Children: Passing a callback to a child component that is wrapped in React.memo. If the function reference changes, the child re-renders regardless of whether the logic inside the function changed.
+
+Stable Dependencies for other Hooks: When a function is used as a dependency in other hooks (like useEffect or useMemo).
+
+3. Code Examples
+A. The "Unnecessary Re-render" Problem
+In this scenario, every time the Parent re-renders (due to the count state), the Child re-renders because handleClick is "new" every time.
+
+JavaScript
+import React, { useState, useCallback } from 'react';
+
+// A memoized child component
+const List = React.memo(({ getItems }) => {
+  console.log("List Component Rendered");
+  return <div>{/* Render items */}</div>;
+});
+
+function Parent() {
+  const [text, setText] = useState("");
+  const [count, setCount] = useState(0);
+
+  // ✅ FIXED: This function is now referentially stable.
+  // Typing in the 'text' input will NOT trigger a re-render of <List />
+  const getItems = useCallback(() => {
+    return [1, 2, 3];
+  }, [count]); // Only changes if count changes
+
+  return (
+    <>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+      <List getItems={getItems} />
+    </>
+  );
+}
+4. ⚠️ Common Gotchas
+The "Stale Closure"
+If you forget to add a dependency to the array, the function will "capture" the variables from the render where it was created and will never see the updated values.
+
+JavaScript
+const handleSave = useCallback(() => {
+  console.log(count); // If 'count' is not in deps, this will always log '0'
+}, []); // ❌ Missing [count]
+The "Empty Performance"
+Wrapping a function that is only used inside a standard HTML element (like <button onClick={cb}>) provides zero performance benefit. The overhead of the hook actually makes it slightly slower than a standard function.
+
+5. ❓ Interview Questions
+Q1: What is the difference between useCallback and useMemo?
+Answer: useMemo is for memoizing a value (the result of a calculation), while useCallback is for memoizing the function definition itself.
+
+useCallback(fn, deps) is effectively a shortcut for useMemo(() => fn, deps).
+
+Q2: Does useCallback make the function execute faster?
+Answer: No. It actually makes the initial render slightly slower due to the overhead of the hook. Its purpose is to make subsequent renders of other components (children) faster by maintaining referential equality.
+
+Q3: When should you NOT use useCallback?
+Answer:
+
++ For functions used only within the current component.
+
++ For functions passed to standard DOM elements (div, button, input).
+
++ If the cost of the re-render you are trying to prevent is lower than the cost of the useCallback dependency check.
+
+Q4: Why is a dependency array required?
+Answer: Because of JavaScript closures. Functions in React components are recreated on every render. The dependency array tells React when to throw away the old "cached" function and create a new one that captures the updated state/props variables.
