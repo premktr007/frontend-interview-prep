@@ -1,0 +1,71 @@
+🧠 React Hooks: useMemo()
+1. Overview
+useMemo is a React Hook that lets you cache the result of a calculation between re-renders. It is the primary tool for Memoization—an optimization technique used to speed up computer programs by storing the results of expensive function calls.
+
+2. When to use useMemo
+As a senior developer, you should apply useMemo in two specific scenarios:
+
+Skipping expensive recalculations: When you have a complex function (sorting 5,000 items, data transformation) that runs on every render.
+
+Referential Stability: When you need to keep an object or array reference the same so that it doesn't trigger a useEffect or a React.memo child component unnecessarily.
+
+3. Code Examples
+A. The "Expensive Calculation" Scenario
+Without useMemo, the filter logic runs every time the theme changes, even though the items haven't changed.
+
+JavaScript
+import { useMemo, useState } from 'react';
+
+function ProductGallery({ items }) {
+  const [filterQuery, setFilterQuery] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // ✅ Only recalculates when 'items' or 'filterQuery' changes
+  const visibleItems = useMemo(() => {
+    console.log("Filtering items..."); // Expensive logic
+    return items.filter(item => item.name.includes(filterQuery));
+  }, [items, filterQuery]);
+
+  return (
+    <div className={isDarkMode ? 'dark' : 'light'}>
+      <button onClick={() => setIsDarkMode(!isDarkMode)}>Toggle Theme</button>
+      <input onChange={(e) => setFilterQuery(e.target.value)} />
+      {/* ... render visibleItems */}
+    </div>
+  );
+}
+B. Stabilizing Object References
+In JavaScript, {} !== {}. If you define an object inside a component, it gets a new memory address every render. Use useMemo to keep it the same.
+
+JavaScript
+// ✅ The 'options' object reference stays stable
+const options = useMemo(() => ({
+  color: isDarkMode ? 'white' : 'black',
+  threshold: 0.5
+}), [isDarkMode]);
+
+// Now this useEffect only runs when 'isDarkMode' actually changes
+useEffect(() => {
+  setupPlugin(options);
+}, [options]);
+4. ⚠️ Common Gotchas
+Premature Optimization: Do not wrap every variable in useMemo. The hook itself has a performance cost (memory allocation and dependency comparison).
+
+The Dependency Lie: If you use a variable inside the function but don't include it in the dependency array, your memoized value will become "stale" (it won't update when that variable changes).
+
+Side Effects: Never write side effects (like API calls or setting state) inside useMemo. Use useEffect for that. useMemo should be a pure function.
+
+5. ❓ Interview Questions
+Q1: What is the difference between useMemo and useCallback?
+Answer: useMemo caches the result of a function (the value). useCallback caches the function instance itself.
+
+Pro-tip: useCallback(fn, deps) is essentially the same as useMemo(() => fn, deps).
+
+Q2: How do you determine if a calculation is "expensive" enough for useMemo?
+Answer: Most basic array operations (map, filter on < 1000 items) are incredibly fast. If you aren't seeing a visible lag, you likely don't need it. You can use performance.now() to measure the time taken; if it's regularly over 1ms, it's a candidate for memoization.
+
+Q3: Why would a useMemo value change even if the dependencies didn't change?
+Answer: It won't! If the value changed, it means at least one item in the dependency array failed a referential equality check (===). This often happens if you pass an object or array as a dependency that was recreated in the parent component.
+
+Q4: Does useMemo guarantee that the value will stay in memory?
+Answer: No. React reserves the right to discard the cache and re-calculate the value to free up resources. Treat useMemo as a performance hint, not a semantic guarantee.
