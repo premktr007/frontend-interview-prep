@@ -1,0 +1,94 @@
+Here are the structured Markdown notes for React.memo, the final piece of the React performance optimization puzzle.
+
+📦 React Higher-Order Component: React.memo
+1. Overview
+React.memo is a Higher-Order Component (HOC). While useMemo and useCallback are hooks used inside a component, React.memo is used to wrap the entire component. It tells React to skip re-rendering the component if its props have not changed.
+
+2. When to use React.memo
+As a senior developer, you should use React.memo when:
+
+Pure Functional Components: The component renders the same output given the same props.
+
+High Render Frequency: The component re-renders often because its parent re-renders, but its own props stay the same.
+
+Complex UI: The component contains a significant amount of UI (large lists, charts, complex SVG) that is expensive to re-process.
+
+3. Code Examples
+A. Basic Usage
+In this example, EmployeeLabel will not re-render when the Parent timer updates, because its name prop remains constant.
+
+JavaScript
+import React, { useState } from 'react';
+
+// ✅ Wrapped in memo: Only re-renders if 'name' changes
+const EmployeeLabel = React.memo(({ name }) => {
+  console.log("EmployeeLabel Rendered");
+  return <div>Name: {name}</div>;
+});
+
+function Parent() {
+  const [seconds, setSeconds] = useState(0);
+
+  // This timer triggers a Parent re-render every second
+  useEffect(() => {
+    const interval = setInterval(() => setSeconds(s => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div>
+      <h1>Time: {seconds}s</h1>
+      <EmployeeLabel name="John Doe" />
+    </div>
+  );
+}
+B. Custom Comparison Function
+Sometimes you want to control exactly when a component re-renders (e.g., ignoring specific prop changes).
+
+JavaScript
+const UserProfile = React.memo(({ user, onEdit }) => {
+  return <div>{user.username}</div>;
+}, (prevProps, nextProps) => {
+  // Returns TRUE if they are equal (SKIP render)
+  // Returns FALSE if they are different (DO render)
+  return prevProps.user.id === nextProps.user.id;
+});
+4. ⚠️ Common Gotchas
+The "Object Reference" Trap
+React.memo uses shallow comparison. If the parent passes an object or array literal, the "memo" will fail because [] !== [].
+
+JavaScript
+// ❌ THIS WILL FAIL TO MEMOIZE
+<EmployeeLabel data={{ id: 1 }} /> 
+
+// ✅ FIX: Memoize the object in the parent first
+const userData = useMemo(() => ({ id: 1 }), []);
+<EmployeeLabel data={userData} />
+The "Function Reference" Trap
+Similarly, if you pass an arrow function, it is "new" every render.
+
+JavaScript
+// ❌ THIS WILL FAIL TO MEMOIZE
+<EmployeeLabel onClick={() => console.log('hi')} />
+
+// ✅ FIX: Wrap the function in useCallback in the parent
+const handleClick = useCallback(() => console.log('hi'), []);
+<EmployeeLabel onClick={handleClick} />
+5. ❓ Interview Questions
+Q1: What is the difference between React.memo and useMemo?
+Answer: React.memo is an HOC used to wrap an entire component to prevent unnecessary re-renders. useMemo is a hook used inside a component to memoize a specific value or calculation.
+
+Q2: How does React.memo compare props?
+Answer: It performs a shallow comparison. For primitive types (strings, numbers, booleans), it checks the value. For complex types (objects, arrays, functions), it only checks if the memory reference is the same.
+
+Q3: When should you NOT use React.memo?
+Answer:
+
+If the component is cheap to render (e.g., just a <span> or <h1>).
+
+If the component props change on almost every render anyway. In this case, you are paying the performance cost of the comparison check plus the render.
+
+If the component relies on context (like a Theme or Auth context). React.memo only watches props, not context. If context changes, the component will still re-render.
+
+Q4: Does React.memo work for Class Components?
+Answer: No, React.memo is for functional components. For class components, you would use React.PureComponent or the shouldComponentUpdate lifecycle method.
