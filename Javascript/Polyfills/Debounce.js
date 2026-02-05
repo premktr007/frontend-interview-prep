@@ -1,6 +1,4 @@
-##Debounce
-
-```let pressCount = 0;
+let pressCount = 0;
 let triggerCount = 0;
 
 const pressCountEl = document.getElementById('press-count');
@@ -36,4 +34,4 @@ function onBtnPress() {
 function increaseTriggerCount() {
   triggerCount++;
   triggerCountEl.textContent = triggerCount;
-}```
+}
