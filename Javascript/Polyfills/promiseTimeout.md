@@ -1,21 +1,23 @@
 ```js
-function withTimeout(promise, ms = 5000) {
+function reqTimeout(promise, timeout = 3000) {
   let timerId;
-  
+
   const timeoutPromise = new Promise((_, reject) => {
-    // Correctly wrap reject in an anonymous function
-    timerId = setTimeout(() => reject(new Error('Operation timed out')), ms);
+    // Standard practice: Reject with an Error object, not just a string
+    timerId = setTimeout(() => reject(new Error('Request Timeout')), timeout);
   });
 
-  // Pass a function to finally to ensure it runs after the race ends
-  return Promise.race([promise, timeoutPromise])
-    .finally(() => clearTimeout(timerId));
+  // Ensure 'promise' is treated as a Promise
+  return Promise.race([Promise.resolve(promise), timeoutPromise])
+    .finally(() => {
+      // Correctly pass a function reference to finally
+      clearTimeout(timerId);
+    });
 }
 
-// Usage: Note we pass the fetch promise directly
-const getUsers = fetch('https://example.com');
+// Usage
+reqTimeout(fetch('https://example.com'), 5000)
+  .then(res => console.log(res))
+  .catch(err => console.error(err.message));
 
-withTimeout(getUsers, 3000)
-  .then(res => console.log("Success:", res))
-  .catch(error => console.error("Error:", error));
 ```
