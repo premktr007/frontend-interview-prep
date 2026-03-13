@@ -1,3 +1,5 @@
+#### Promise.race() takes an array of promises and settles (either resolves or rejects) as soon as the first promise in the array settles. It’s a literal "race"—the quickest one wins, and the others are ignored. network timeout is the real-world example
+
 ```js
 Promise.myRace = function(promises) {
     // 1. Basic validation
