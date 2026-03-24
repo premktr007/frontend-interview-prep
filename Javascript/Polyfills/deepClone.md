@@ -29,4 +29,4 @@ const copied = deepClone(original);
 console.log(copied.b !== original.b);
 ```
 #### Why WeakMap is Used (Important Interview Point)
-##### During cloning we temporarily store objects and once cloning finishes, we don't need this map anymore. If we used Map, the references might stay in memory but with WeakMap, objects gets garbage collected and WeakMap allows objects as keys.
+##### It is used to handle circular references and during cloning we temporarily store objects and once cloning finishes, we don't need this map anymore. If we used Map, the references might stay in memory but with WeakMap, objects gets garbage collected and WeakMap allows objects as keys.
